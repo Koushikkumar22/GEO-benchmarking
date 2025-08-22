@@ -1,0 +1,6 @@
+streamlit
+pandas
+matplotlib
+nltk
+python-dotenv
+google-generativeai

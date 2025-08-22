@@ -1,0 +1,288 @@
+# app.py
+
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+import json
+from dotenv import load_dotenv
+from textblob import TextBlob
+from datetime import datetime
+
+# AI SDKs
+from azure.ai.inference import ChatCompletionsClient
+from azure.ai.inference.models import SystemMessage, UserMessage
+from azure.core.credentials import AzureKeyCredential
+from openai import OpenAI
+
+# -----------------------------
+# Load environment variables
+# -----------------------------
+load_dotenv()
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+
+if GITHUB_TOKEN:
+    github_client = OpenAI(
+        base_url="https://models.github.ai/inference",
+        api_key=GITHUB_TOKEN
+    )
+
+# -----------------------------
+# Sidebar – Quick User Guide
+# -----------------------------
+st.sidebar.title("ℹ️ How to Use GEO Benchmark Tool")
+
+st.sidebar.markdown("""
+**1️⃣ Select AI providers**  
+Choose one or more:  
+- Grok (GitHub token)  
+- OpenAI (GitHub token)  
+- Sample data (for testing/demo)
+
+**2️⃣ Enter Competitors**  
+Type competitor names separated by commas.  
+Example: `Waters, Thermo Fisher, Agilent, Shimadzu`  
+
+**3️⃣ Enter Prompts**  
+List the AI questions your customers might ask.  
+One prompt per line.  
+Example:  
+
+**4️⃣ Click “Run Benchmark”**  
+The app will query the selected AI providers for your prompts.  
+Metrics, charts, and product insights will be displayed.
+
+---
+
+### **Metrics Explained**
+- **Share of Voice (SOV %)** – % of AI responses mentioning each competitor  
+- **Mention Frequency** – How often competitors are mentioned  
+- **Sentiment** – Positive / Neutral / Negative tone of mentions  
+- **Product Mentions** – Words or products mentioned near each competitor  
+- **Radar Chart** – Visual comparison of SOV across competitors and providers  
+- **Trend Over Time** – Tracks SOV changes over multiple benchmark runs
+
+---
+
+### **Tips**
+- Use multiple prompts to cover all products/features  
+- Run benchmarks regularly to track trends  
+- Compare Grok vs OpenAI to see differences in AI visibility  
+- Product mentions help identify which products are top-of-mind
+""")
+
+# -----------------------------
+# Helper functions
+# -----------------------------
+def get_sentiment(text):
+    analysis = TextBlob(text)
+    if analysis.sentiment.polarity > 0.1:
+        return "Positive"
+    elif analysis.sentiment.polarity < -0.1:
+        return "Negative"
+    else:
+        return "Neutral"
+
+def extract_mentions(text, competitors):
+    text_lower = text.lower()
+    return [c for c in competitors if c.lower() in text_lower]
+
+def calculate_metrics(responses, competitors):
+    freq = {c: 0 for c in competitors}
+    sentiment = {c: {"Positive":0, "Neutral":0, "Negative":0} for c in competitors}
+    
+    for text in responses:
+        mentions = extract_mentions(text, competitors)
+        for m in mentions:
+            freq[m] += 1
+            sentiment[m][get_sentiment(text)] += 1
+    
+    total_mentions = sum(freq.values()) or 1
+    sov = {c: round(freq[c]/total_mentions*100,2) for c in competitors}
+    
+    return freq, sov, sentiment
+
+def save_metrics(metrics, provider):
+    if not os.path.exists("trend_data.json"):
+        data = {}
+    else:
+        with open("trend_data.json") as f:
+            data = json.load(f)
+    date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    if provider not in data:
+        data[provider] = {}
+    data[provider][date_str] = metrics
+    with open("trend_data.json", "w") as f:
+        json.dump(data, f, indent=2)
+
+# -----------------------------
+# Streamlit UI
+# -----------------------------
+st.title("🚀 Competitor GEO Benchmarking")
+
+# Select providers
+providers = st.multiselect(
+    "Choose AI provider(s)",
+    ["Grok (GitHub token)", "OpenAI (GitHub token)", "Sample data"],
+    default=["Grok (GitHub token)"]
+)
+
+# Competitors
+competitors = st.text_input(
+    "Enter competitors (comma-separated)",
+    "Waters, Thermo Fisher, Agilent, Shimadzu"
+)
+competitors = [c.strip() for c in competitors.split(",") if c.strip()]
+
+# Prompts
+prompts = st.text_area(
+    "Enter prompts (one per line)",
+    "Best LC-MS instruments for metabolomics\nTop chromatography systems"
+)
+
+# Run Benchmark
+if st.button("Run Benchmark"):
+
+    all_results = {}
+
+    for provider in providers:
+        responses = []
+
+        if provider == "Sample data":
+            with open("sample_data/sample_responses.json") as f:
+                data = json.load(f)
+                responses = data["responses"]
+        else:
+            for prompt in prompts.splitlines():
+                if not prompt.strip():
+                    continue
+                text = ""
+
+                # Grok API
+                if provider == "Grok (GitHub token)":
+                    if not GITHUB_TOKEN:
+                        st.error("GitHub token not found in .env")
+                        st.stop()
+                    try:
+                        client = ChatCompletionsClient(
+                            endpoint="https://models.github.ai/inference",
+                            credential=AzureKeyCredential(GITHUB_TOKEN)
+                        )
+                        completion = client.complete(
+                            messages=[SystemMessage(""), UserMessage(prompt)],
+                            temperature=1,
+                            top_p=1,
+                            model="xai/grok-3-mini"
+                        )
+                        text = completion.choices[0].message.content.strip()
+                    except Exception as e:
+                        text = f"[Grok API error: {str(e)}]"
+
+                # OpenAI via GitHub token
+                elif provider == "OpenAI (GitHub token)":
+                    if not GITHUB_TOKEN:
+                        st.error("GitHub token not found in .env")
+                        st.stop()
+                    try:
+                        completion = github_client.chat.completions.create(
+                            model="openai/gpt-4o",
+                            messages=[
+                                {"role": "system", "content": ""},
+                                {"role": "user", "content": prompt}
+                            ],
+                            temperature=1,
+                            max_tokens=4096,
+                            top_p=1
+                        )
+                        text = completion.choices[0].message.content.strip()
+                    except Exception as e:
+                        text = f"[OpenAI GitHub error: {str(e)}]"
+
+                responses.append(text)
+
+        all_results[provider] = responses
+
+    # -----------------------------
+    # Calculate Metrics & Product Insights
+    # -----------------------------
+    st.subheader("📊 Metrics per provider")
+    metrics_df = {}
+    product_mentions = {}
+
+    for provider, resps in all_results.items():
+        freq, sov, sentiment = calculate_metrics(resps, competitors)
+        metrics_df[provider] = {"Frequency": freq, "SOV": sov, "Sentiment": sentiment}
+
+        # Product mentions (simple extraction)
+        prod_dict = {c: [] for c in competitors}
+        for text in resps:
+            for comp in competitors:
+                if comp.lower() in text.lower():
+                    words = text.split()
+                    prod_dict[comp].extend(words)
+        product_mentions[provider] = prod_dict
+
+        # Save metrics for trend tracking
+        save_metrics(sov, provider)
+
+    # Display tables
+    for provider in metrics_df:
+        st.markdown(f"### {provider}")
+        freq_df = pd.DataFrame.from_dict(metrics_df[provider]["Frequency"], orient="index", columns=["Mentions"])
+        sov_df = pd.DataFrame.from_dict(metrics_df[provider]["SOV"], orient="index", columns=["SOV (%)"])
+        st.dataframe(pd.concat([freq_df, sov_df], axis=1))
+
+        st.write("Sentiment Distribution:")
+        for comp, sent in metrics_df[provider]["Sentiment"].items():
+            st.write(f"**{comp}**: {sent}")
+
+        st.write("Sample Product Mentions:")
+        for comp, words in product_mentions[provider].items():
+            st.write(f"**{comp}**: {', '.join(words[:10])} ...")  # show first 10 words
+
+        # Bar chart SOV
+        fig, ax = plt.subplots()
+        ax.bar(sov_df.index, sov_df["SOV (%)"], color="skyblue")
+        ax.set_ylabel("Share of Voice (%)")
+        ax.set_ylim(0,100)
+        st.pyplot(fig)
+
+    # Radar Chart Comparison
+    st.subheader("📈 Radar Chart Comparison (SOV)")
+    if len(providers) > 1:
+        import numpy as np
+        from math import pi
+
+        categories = competitors
+        N = len(categories)
+        angles = [n / float(N) * 2 * pi for n in range(N)]
+        angles += angles[:1]
+
+        fig = plt.figure(figsize=(6,6))
+        ax = plt.subplot(111, polar=True)
+
+        for provider in providers:
+            values = [metrics_df[provider]["SOV"][c] for c in categories]
+            values += values[:1]
+            ax.plot(angles, values, linewidth=2, label=provider)
+            ax.fill(angles, values, alpha=0.25)
+
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(categories)
+        ax.set_yticklabels([])
+        ax.set_title("SOV Comparison Radar Chart")
+        ax.legend()
+        st.pyplot(fig)
+
+    # Trend Tracking
+    st.subheader("📊 SOV Trend Over Time")
+    if os.path.exists("trend_data.json"):
+        with open("trend_data.json") as f:
+            trend_data = json.load(f)
+        for provider in trend_data:
+            st.write(f"**{provider}**")
+            df = pd.DataFrame(trend_data[provider]).T
+            df.plot(figsize=(8,4), marker='o')
+            st.pyplot(plt.gcf())
+            plt.clf()

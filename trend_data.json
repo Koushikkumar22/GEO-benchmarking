@@ -1,0 +1,123 @@
+{
+  "Grok (GitHub token)": {
+    "2025-08-18 16:54": {
+      "Waters": 28.57,
+      "Thermo Fisher": 28.57,
+      "Agilent": 28.57,
+      "Shimadzu": 14.29
+    },
+    "2025-08-18 17:16": {
+      "google pixel": 33.33,
+      "vivo": 33.33,
+      "oneplus": 33.33
+    },
+    "2025-08-18 17:18": {
+      "Waters": 50.0,
+      "Thermo Fisher": 50.0
+    },
+    "2025-08-19 09:25": {
+      "Waters": 33.33,
+      "Thermo Fisher": 33.33,
+      "Agilent": 33.33,
+      "Shimadzu": 0.0
+    },
+    "2025-08-19 09:32": {
+      "Waters": 33.33,
+      "Thermo Fisher": 33.33,
+      "Agilent": 33.33,
+      "Shimadzu": 0.0
+    },
+    "2025-08-19 09:44": {
+      "Waters": 16.67,
+      "Thermo Fisher": 33.33,
+      "Agilent": 33.33,
+      "Shimadzu": 16.67
+    },
+    "2025-08-19 09:57": {
+      "Waters": 33.33,
+      "Thermo Fisher": 33.33,
+      "Agilent": 33.33,
+      "Shimadzu": 0.0
+    },
+    "2025-08-19 10:00": {
+      "Waters": 0.0,
+      "Thermo Fisher": 0.0,
+      "Agilent": 0.0
+    }
+  },
+  "OpenAI (GitHub token)": {
+    "2025-08-18 16:54": {
+      "Waters": 25.0,
+      "Thermo Fisher": 25.0,
+      "Agilent": 25.0,
+      "Shimadzu": 25.0
+    },
+    "2025-08-18 17:16": {
+      "google pixel": 0.0,
+      "vivo": 50.0,
+      "oneplus": 50.0
+    },
+    "2025-08-18 17:18": {
+      "Waters": 100.0,
+      "Thermo Fisher": 0.0
+    },
+    "2025-08-19 09:25": {
+      "Waters": 25.0,
+      "Thermo Fisher": 25.0,
+      "Agilent": 25.0,
+      "Shimadzu": 25.0
+    },
+    "2025-08-19 09:32": {
+      "Waters": 33.33,
+      "Thermo Fisher": 33.33,
+      "Agilent": 33.33,
+      "Shimadzu": 0.0
+    },
+    "2025-08-19 09:33": {
+      "Waters": 25.0,
+      "Thermo Fisher": 25.0,
+      "Agilent": 25.0,
+      "Shimadzu": 25.0
+    },
+    "2025-08-19 09:34": {
+      "Waters": 50.0,
+      "Thermo Fisher": 0.0,
+      "Agilent": 50.0,
+      "merck": 0.0
+    },
+    "2025-08-19 09:39": {
+      "Waters": 28.57,
+      "Thermo Fisher": 28.57,
+      "Agilent": 28.57,
+      "Shimadzu": 14.29
+    },
+    "2025-08-19 09:40": {
+      "Waters": 33.33,
+      "Thermo Fisher": 33.33,
+      "Agilent": 33.33
+    },
+    "2025-08-19 09:48": {
+      "Waters": 25.0,
+      "Thermo Fisher": 25.0,
+      "Agilent": 25.0,
+      "Shimadzu": 25.0
+    },
+    "2025-08-19 10:01": {
+      "Waters": 0.0,
+      "Thermo Fisher": 0.0,
+      "Agilent": 0.0
+    }
+  },
+  "DeepSeek (GitHub token)": {
+    "2025-08-18 17:18": {
+      "Waters": 50.0,
+      "Thermo Fisher": 50.0
+    },
+    "2025-08-19 09:25": {
+      "Waters": 25.0,
+      "Thermo Fisher": 25.0,
+      "Agilent": 25.0,
+      "Shimadzu": 25.0
+    }
+  }
+}
